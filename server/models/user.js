@@ -53,11 +53,20 @@ var userSchema = new mongoose.Schema({
 
 userSchema.pre('save', async function(next){
     if (!this.isModified('password')) {
-        next();
+        next()
     }
     const salt = bcrypt.genSaltSync(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    this.password = await bcrypt.hash(this.password, salt)
 }) // khong ap dung cho hang update
+
+userSchema.methods = {
+    // ham compare so sanh password
+    isCorrectPassword: async function (password) {
+        // ham se tra ve true of false
+        return await bcrypt.compare(password, this.password)
+    },
+}
+
 
 //Export the model
 module.exports = mongoose.model('User', userSchema);
