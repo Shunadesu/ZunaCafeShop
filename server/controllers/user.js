@@ -1,4 +1,5 @@
 const User = require('../models/user')
+const {generateAccessToken, generateRefreshToken} = require('../middlewares/jwt')
 
 const asyncHandler = require('express-async-handler')
 
@@ -19,7 +20,9 @@ const register = asyncHandler(async(req, res) => {
             })
         }
 })
+// Chuc nang cua refresh chi dung de cap moi 1 cai accessToken
 
+//AccessToken giup xac thuc nguoi dung, phan quyen nguoi dung
 const login = asyncHandler(async(req, res) => {
     const {email, password} = req.body
     if (!email || !password) {
@@ -30,11 +33,19 @@ const login = asyncHandler(async(req, res) => {
     //check co email hay khong?
     if(response && await response.isCorrectPassword(password)) {
 
-        const {password, role, ...userDate} = response.toObject()
+        // Tach password va role ra khoi respone
+        const {password, role, ...userData} = response.toObject()
+        const accessToken = generateAccessToken(response._id, role)
+        const refreshToken = generateRefreshToken(response._id) // check qua han toke
+        // Save refresToken vao database
+        await User.findByIdAndUpdate(response._id, {refreshToken}, {new: true})
+        // Luu refreshToken vao cookie
+        res.cookie('refreshToken', refreshToken, {httpOnly: true, maxAge: 7 * 60 * 60 * 24 * 1000})
 
         // check password thanh cong
         return res.status(200).json({
             success: true,
+            accessToken,
             userData
         })
     }else{
@@ -43,8 +54,20 @@ const login = asyncHandler(async(req, res) => {
 
 })
 
+const getCurrent = asyncHandler(async(req, res) => {
+    const { _id} = req.user
+    const user = await User.findById(_id).select('-refreshToken -password -role') // Tim xem email duoc dang ky hay chua
+    return res.status(200).json({
+        success: false,
+        rs: user ? user : 'User not found'
+    })
+
+})
+
+
 
 module.exports = {
     register, 
     login,
+    getCurrent,
 }
