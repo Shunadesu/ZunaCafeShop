@@ -26,11 +26,58 @@ const getProduct = asyncHandler(async(req, res)=>{
 
 //Lay all product -- filtering, sorting and pagination
 const getProducts = asyncHandler(async(req, res)=>{
-    const products = await Product.find() 
-    return res.status(200).json({
-        success: products ? true : false,
-        productData: products ? products : 'Cannot get product'
-    })
+    // Kieu du lieu tham chieu
+    const queries = {...req.query}
+    // Tach cac truong du lieu dac biet ra khoi query
+    const excludeFields = ['limit', 'sort', 'page', 'fields']
+    excludeFields.forEach(el => delete queries[el]) // o day co nghia la chi xoa nhung truong nay cuar queries thoi, con req.body thi van giu lai
+    // Format Mongoose operators
+    let queryString = JSON.stringify(queries);
+    queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, match => `$${match}`);
+    const formattedQueries = JSON.parse(queryString);
+
+    //Filttering
+    if(queries?.title) formattedQueries.title = {$regex: queries.title, $options: 'i'} 
+    // regax giup minh go tim thi chu can go 1 chu thoi thi van tim duoc 4 chu
+    let queryCommand = Product.find(formattedQueries) // promise dang bendding ma thoi, chua goi
+    
+    //Sorting
+    if(req.query.sort){
+        // vd: abc,efg --> [abc, efc] --> abc efg
+        const sortBy = req.query.sort.split(',').join(' ')
+        // tu dau , chuyen thanh mang xong r join chuyen thanh dau space
+        queryCommand = queryCommand.sort(sortBy)
+    }else {
+        queryCommand = queryCommand.sort('-createdAt'); // Default sorting
+    }
+    //fields limiting
+    if (req.query.fields) {
+        const fields = req.body.fields.split(',').join(' ');
+        queryCommand = queryCommand.select(fields);
+    }
+
+    //pagnigation
+    const page = parseInt(req.query.page) || 1; // phia client gui len
+    const limit = parseInt(req.query.limit) || 4; // so phan tu object lay ve 1 lan goi api
+    const skip = (page - 1) * limit; // bo qua 
+    queryCommand = queryCommand.skip(skip).limit(limit);
+
+    // So luong product thoa man dieu se khac voi so luong san pham tra ve 1 lan
+    try {
+        // execute the query
+        const response = await queryCommand.exec();
+        const counts = await Product.find(formattedQueries).countDocuments();
+    
+        return res.status(200).json({
+            success: !!response,
+            counts,
+            products: response || 'Cannot get product',
+            page,
+            limit
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: err.message });
+    }
 })
 
 
@@ -53,10 +100,40 @@ const deleteProduct = asyncHandler(async(req, res)=>{
     })
 })
 
+const ratings = asyncHandler(async(req, res) => {
+    const {_id} = req.user
+    const {star, comment, pid} = req.body
+    if(!star || !pid) throw new Error('Missing inputs')
+    // Chinh sua lai so sao
+    const ratingProduct = await Product.findById(pid);
+    if (!ratingProduct) throw new Error('Product not found');
+    const alreadyRating = ratingProduct?.ratings?.find(el => el.postedBy.toString() === _id)
+    // console.log({alreadyRating})
+    if(alreadyRating){
+        //update star and comment
+        await Product.updateOne({
+            ratings: { $elemMatch: alreadyRating}
+        }, {
+            $set: {"ratings.$.star": star, "ratings.$.comment" : comment}
+        }, {new: true})
+    }else {
+        //add new star or comment
+        await Product.findByIdAndUpdate(pid, 
+            {$push: {ratings: {star, comment, postedBy: _id}}},
+            {new: true}
+        )
+    }
+    return res.status(200).json({
+        status: true,
+        // success: response ? true : false,
+    })
+})
+
 module.exports = {
     createProduct,
     getProduct,
     getProducts,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    ratings
 }

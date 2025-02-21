@@ -4,6 +4,7 @@ const {verifyAccessToken, isAdmin} = require('../middlewares/verifyToken')
 
 router.post('/', [verifyAccessToken, isAdmin], ctrls.createProduct)
 router.get('/', ctrls.getProducts)
+router.put('/ratings', verifyAccessToken, ctrls.ratings)
 
 // route nao can params thi nen de cuoi cung
 router.delete('/:pid',[verifyAccessToken, isAdmin], ctrls.deleteProduct)
