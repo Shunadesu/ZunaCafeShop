@@ -58,7 +58,7 @@ const login = asyncHandler(async(req, res) => {
 
 const getCurrent = asyncHandler(async(req, res) => {
     const { _id} = req.user
-    const user = await User.findById(_id).select('-refreshToken -password -role') // Tim xem email duoc dang ky hay chua
+    const user = await User.findById(_id).select('-refreshToken -password ') // Tim xem email duoc dang ky hay chua
     return res.status(200).json({
         success: false,
         rs: user ? user : 'User not found'
@@ -145,7 +145,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 })
 
 const getUsers = asyncHandler( async (req, res )=> {
-    const response = await User.find().select('-refreshToken -password -role')
+    const response = await User.find().select('-refreshToken -password ')
     return res.status(200).json({
         success: response ? true : false,
         users: response
