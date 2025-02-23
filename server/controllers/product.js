@@ -100,34 +100,49 @@ const deleteProduct = asyncHandler(async(req, res)=>{
     })
 })
 
-const ratings = asyncHandler(async(req, res) => {
-    const {_id} = req.user
-    const {star, comment, pid} = req.body
-    if(!star || !pid) throw new Error('Missing inputs')
-    // Chinh sua lai so sao
-    const ratingProduct = await Product.findById(pid);
-    if (!ratingProduct) throw new Error('Product not found');
-    const alreadyRating = ratingProduct?.ratings?.find(el => el.postedBy.toString() === _id)
-    // console.log({alreadyRating})
-    if(alreadyRating){
-        //update star and comment
-        await Product.updateOne({
-            ratings: { $elemMatch: alreadyRating}
-        }, {
-            $set: {"ratings.$.star": star, "ratings.$.comment" : comment}
-        }, {new: true})
-    }else {
-        //add new star or comment
-        await Product.findByIdAndUpdate(pid, 
-            {$push: {ratings: {star, comment, postedBy: _id}}},
-            {new: true}
-        )
+const ratings = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    const { star, comment, pid } = req.body;
+
+    if (!star || !pid) throw new Error('Missing inputs');
+
+    const product = await Product.findById(pid);
+    if (!product) throw new Error('Product not found');
+
+    // Check if the user already rated the product
+    const existingRatingIndex = product.ratings.findIndex(
+        (el) => el.postedBy.toString() === _id.toString()
+    );
+
+    let updatedProduct;
+
+    if (existingRatingIndex !== -1) {
+        // Update existing rating
+        product.ratings[existingRatingIndex].star = star;
+        if (comment) product.ratings[existingRatingIndex].comment = comment;
+        updatedProduct = await product.save();
+    } else {
+        // Add new rating
+        updatedProduct = await Product.findByIdAndUpdate(
+            pid,
+            { $push: { ratings: { star, comment, postedBy: _id } } },
+            { new: true }
+        );
     }
+
+    // Recalculate the average rating
+    const totalStars = updatedProduct.ratings.reduce((sum, rating) => sum + rating.star, 0);
+    updatedProduct.totalRatings = updatedProduct.ratings.length > 0 ? (totalStars / updatedProduct.ratings.length).toFixed(1) : 0;
+
+    await updatedProduct.save();
+
     return res.status(200).json({
-        status: true,
-        // success: response ? true : false,
-    })
-})
+        success: true,
+        message: 'Rating submitted successfully',
+        product: updatedProduct,
+    });
+});
+
 
 module.exports = {
     createProduct,
