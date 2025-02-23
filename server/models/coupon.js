@@ -6,7 +6,7 @@ var couponSchema = new mongoose.Schema({
         type:String,
         required:true,
         unique:true,
-        index:true,
+        uppercase: true
     }, 
     discount: {
         type: Number,
