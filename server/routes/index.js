@@ -5,6 +5,8 @@ const couponRouter = require('./coupon')
 const productCategoryRouter = require('./productCategory')
 const blogCategoryRouter = require('./blogCategory')
 
+const cors = require('cors');
+
 const {errorHandler, notFound} = require('../middlewares/errorhandler')
 const initRoutes = (app) => {
     app.use('/api/user', userRouter)
