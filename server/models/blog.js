@@ -19,7 +19,7 @@ var blogSchema = new mongoose.Schema({
         type:Number,
         default: 0
     },
-    img: {
+    image: {
         type:String,
         default: 'https://t4.ftcdn.net/jpg/05/24/04/51/360_F_524045110_UXnCx4GEDapddDi5tdlY96s4g0MxHRvt.jpg'
     },

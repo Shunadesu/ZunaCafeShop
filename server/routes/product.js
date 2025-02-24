@@ -8,7 +8,7 @@ router.get('/', ctrls.getProducts)
 router.put('/ratings', verifyAccessToken, ctrls.ratings)
 
 // route nao can params thi nen de cuoi cung
-router.put('/uploadimage/:pid', [verifyAccessToken, isAdmin], uploader.single('images') ,ctrls.uploadImagesProduct)
+router.put('/uploadimage/:pid', [verifyAccessToken, isAdmin], uploader.array('images', 5) ,ctrls.uploadImagesProduct)
 router.put('/:pid', [verifyAccessToken, isAdmin], ctrls.updateProduct)
 
 router.delete('/:pid',[verifyAccessToken, isAdmin], ctrls.deleteProduct)

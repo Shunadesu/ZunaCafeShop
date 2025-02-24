@@ -144,9 +144,14 @@ const ratings = asyncHandler(async (req, res) => {
 });
 
 const uploadImagesProduct = asyncHandler(async(req, res) => {
-    
-    console.log(req.file)
-    return res.json('Oke')
+    const {pid} = req.params
+    if(!req.files) throw new Error('Missing files');
+    const response = await Product.findByIdAndUpdate(pid, {$push: {images: {$each: req.files.map(el => el.path)}}}, {new: true})
+
+    return res.status(200).json({
+        success: response ? true : false,
+        updatedProduct: response ? response : 'Something went wrong'
+    })
 })
 
 

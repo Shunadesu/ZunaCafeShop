@@ -50,10 +50,22 @@ const getBlog = asyncHandler(async(req, res)=>{
     })
 })
 
+const uploadImagesBlog = asyncHandler(async(req, res) => {
+    const {bid} = req.params
+    if(!req.file) throw new Error('Missing files');
+    const response = await Blog.findByIdAndUpdate(bid, {image: req.file.path}, {new: true})
+
+    return res.status(200).json({
+        success: response ? true : false,
+        updatedProduct: response ? response : 'Something went wrong'
+    })
+})
+
 module.exports = { 
     createBlog,
     getBlogs,
     getBlog,
     updateBlog,
-    deleteBlog
+    deleteBlog,
+    uploadImagesBlog
 }
