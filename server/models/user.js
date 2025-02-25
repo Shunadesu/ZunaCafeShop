@@ -11,16 +11,13 @@ const cartItemSchema = new mongoose.Schema({
     },
     quantity: { 
         type: Number, 
-        required: true, 
         min: 1 
     },
     price: { 
         type: Number, 
-        required: true 
     },
     total: { 
         type: Number, 
-        required: true 
     }
 }, { _id: false });
 
@@ -48,10 +45,7 @@ var userSchema = new mongoose.Schema({
         default: 'user',
     },
     cart: [cartItemSchema],
-    address: { 
-        type: Array,
-        default: []
-    },
+    address: String,
     isBlocked: {
         type: Boolean,
         default: false,
