@@ -7,8 +7,14 @@ const initRoutes = require('./routes')
     const port = process.env.PORT || 8888;
 
 const cookieParser = require('cookie-parser')
+const cors = require('cors')
 
 app.use(cookieParser());
+
+app.use(cors({
+    origin: process.env.CLIENT_URL,
+    methods: ['POST', 'PUT', 'GET' ,'DELETE']
+}))
 app.use(express.json()); // read json file
 app.use(express.urlencoded({extended: true})) // doc code nhieu kieu khac nhau 
 
